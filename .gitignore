@@ -218,3 +218,6 @@ __marimo__/
 .streamlit/secrets.toml
 
 *.csv
+.DS_Store
+node_modules
+package-lock.json
