@@ -34,6 +34,18 @@
         </div>
       </div>
 
+      <div v-if="config.model === 'gmm'" class="control-group">
+        <label class="control-label">Covariance</label>
+        <div class="toggle-group covariance-group">
+          <button
+            v-for="c in ['full', 'tied', 'diag', 'spherical']"
+            :key="c"
+            :class="['toggle-btn', config.covariance_type === c && 'active']"
+            @click="emit('change', { ...config, covariance_type: c })"
+          >{{ c }}</button>
+        </div>
+      </div>
+
       <div class="control-group">
         <label class="control-label">Volatility Window</label>
         <div class="toggle-group">
@@ -111,6 +123,9 @@ const emit = defineEmits(['change', 'analyze'])
 
 .toggle-btn:hover { border-color: #3b82f6; color: #e2e8f0; }
 .toggle-btn.active { background: #1d4ed8; border-color: #3b82f6; color: #fff; }
+
+.covariance-group { flex-wrap: wrap; }
+.covariance-group .toggle-btn { padding: 6px 10px; font-size: 0.75rem; }
 
 .slider-wrap { display: flex; flex-direction: column; gap: 4px; }
 

@@ -26,7 +26,7 @@
           <p>Running analysis…</p>
           <p class="loading-sub">
             {{ activeSource === 'custom' ? 'Custom dataset' : 'coin_Bitcoin.csv' }}
-            · {{ config.model === 'gmm' ? 'GMM' : 'K-Means' }} K={{ config.k }}
+            · {{ config.model === 'gmm' ? `GMM (${config.covariance_type})` : 'K-Means' }} K={{ config.k }}
           </p>
         </div>
       </div>
@@ -60,7 +60,7 @@ import PcaScatter from '../components/PcaScatter.vue'
 import ElbowChart from '../components/ElbowChart.vue'
 import ClusterTable from '../components/ClusterTable.vue'
 
-const config = reactive({ k: 4, model: 'kmeans', window: 7 })
+const config = reactive({ k: 4, model: 'kmeans', window: 7, covariance_type: 'full' })
 const analysis = ref(null)
 const elbowData = ref([])
 const loading = ref(false)
@@ -73,7 +73,13 @@ async function runAnalysis() {
   const useUploaded = activeSource.value === 'custom'
   try {
     const [analysisResult, elbowResult] = await Promise.all([
-      fetchAnalysis({ k: config.k, model: config.model, window: config.window, use_uploaded: useUploaded }),
+      fetchAnalysis({
+        k: config.k,
+        model: config.model,
+        window: config.window,
+        use_uploaded: useUploaded,
+        ...(config.model === 'gmm' && { covariance_type: config.covariance_type }),
+      }),
       fetchElbow({ k_max: 10, window: config.window, use_uploaded: useUploaded }),
     ])
     analysis.value = analysisResult

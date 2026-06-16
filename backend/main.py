@@ -152,17 +152,42 @@ def get_elbow(k_max: int = 10, window: int = 7, use_uploaded: bool = False):
     return {"data": find_optimal_k(X, k_max=k_max)}
 
 
+VALID_COVARIANCE_TYPES = {"full", "tied", "diag", "spherical"}
+
+
 @app.get("/api/analysis")
-def get_analysis(k: int = 4, model: str = "kmeans", window: int = 7, use_uploaded: bool = False):
+def get_analysis(
+    k: int = 4,
+    model: str = "kmeans",
+    window: int = 7,
+    use_uploaded: bool = False,
+    covariance_type: str = "full",
+):
     """Phases 3-5: train model, interpret clusters, return all visualisation data."""
+    if covariance_type not in VALID_COVARIANCE_TYPES:
+        raise HTTPException(
+            400,
+            f"Invalid covariance_type '{covariance_type}'. "
+            f"Must be one of: {', '.join(sorted(VALID_COVARIANCE_TYPES))}.",
+        )
+
     df, X, _, scaler = _get_data(use_uploaded, window)
 
     if model == "gmm":
-        labels, centroids, cluster_names, sil, _, X_pca = run_gmm(X, k, scaler)
-        extra: dict = {}
+        labels, centroids, cluster_names, sil, X_pca, gmm_info = run_gmm(
+            X, k, scaler, covariance_type=covariance_type
+        )
+        extra: dict = {
+            "bic": gmm_info["bic"],
+            "aic": gmm_info["aic"],
+            "model_config": gmm_info["model_config"],
+        }
     else:
         labels, centroids, cluster_names, sil, inertia, X_pca = run_kmeans(X, k, scaler)
-        extra = {"inertia": inertia}
+        extra = {
+            "inertia": inertia,
+            "model_config": {"n_init": 10, "random_state": 42},
+        }
 
     # Per-day price data with cluster assignment
     price_data = []

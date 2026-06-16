@@ -73,12 +73,28 @@ def run_kmeans(X: np.ndarray, k: int, scaler):
     return labels, centroids, cluster_names, sil, float(km.inertia_), _pca2d(X)
 
 
-def run_gmm(X: np.ndarray, k: int, scaler):
+def run_gmm(X: np.ndarray, k: int, scaler, covariance_type: str = "full"):
     """Phase 3: Gaussian Mixture Model (soft clustering)."""
-    gmm = GaussianMixture(n_components=k, random_state=42, n_init=5)
+    n_init = 5
+    random_state = 42
+    gmm = GaussianMixture(
+        n_components=k,
+        covariance_type=covariance_type,
+        random_state=random_state,
+        n_init=n_init,
+    )
     gmm.fit(X)
     labels = gmm.predict(X)
     centroids = scaler.inverse_transform(gmm.means_)
     cluster_names = interpret_clusters(centroids)
     sil = float(silhouette_score(X, labels))
-    return labels, centroids, cluster_names, sil, None, _pca2d(X)
+    gmm_info = {
+        "bic": float(gmm.bic(X)),
+        "aic": float(gmm.aic(X)),
+        "model_config": {
+            "covariance_type": covariance_type,
+            "n_init": n_init,
+            "random_state": random_state,
+        },
+    }
+    return labels, centroids, cluster_names, sil, _pca2d(X), gmm_info

@@ -11,8 +11,14 @@
 
     <div class="stat-card">
       <div class="stat-label">Algorithm</div>
-      <div class="stat-value">{{ analysis.model === 'gmm' ? 'GMM' : 'K-Means' }}</div>
-      <div class="stat-desc">{{ analysis.model === 'gmm' ? 'Soft clustering' : 'Hard clustering' }}</div>
+      <div class="stat-value algorithm-value">{{ algorithmLabel }}</div>
+      <div class="stat-desc">{{ algorithmDesc }}</div>
+    </div>
+
+    <div v-if="analysis.model === 'gmm'" class="stat-card">
+      <div class="stat-label">BIC / AIC</div>
+      <div class="stat-value bic-value">{{ analysis.bic?.toFixed(0) }}</div>
+      <div class="stat-desc">AIC: {{ analysis.aic?.toFixed(0) }} (lower is better)</div>
     </div>
 
     <div class="stat-card">
@@ -41,6 +47,25 @@ import { computed } from 'vue'
 
 const props = defineProps({ analysis: Object })
 
+const algorithmLabel = computed(() => {
+  if (props.analysis.model === 'gmm') {
+    const cov = props.analysis.model_config?.covariance_type ?? 'full'
+    return `GMM (${cov})`
+  }
+  return 'K-Means'
+})
+
+const algorithmDesc = computed(() => {
+  if (props.analysis.model === 'gmm') {
+    const cfg = props.analysis.model_config
+    return cfg
+      ? `cov=${cfg.covariance_type} · n_init=${cfg.n_init} · seed=${cfg.random_state}`
+      : 'Soft clustering'
+  }
+  const cfg = props.analysis.model_config
+  return cfg ? `n_init=${cfg.n_init} · seed=${cfg.random_state}` : 'Hard clustering'
+})
+
 const silColor = computed(() => {
   const s = props.analysis.silhouette_score
   if (s >= 0.5) return '#10b981'
@@ -59,7 +84,7 @@ const silDesc = computed(() => {
 <style scoped>
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
 }
 
@@ -95,6 +120,8 @@ const silDesc = computed(() => {
 }
 
 .date-value { font-size: 0.9rem; padding-top: 4px; }
+.algorithm-value { font-size: 1.2rem; }
+.bic-value { font-size: 1.2rem; }
 
 .stat-desc {
   font-size: 0.72rem;
